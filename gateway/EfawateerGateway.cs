@@ -185,7 +185,7 @@ namespace Gateways
 
                     // 1-6 - эти статусы можешь юзать, пока проведением платежа занимаешься
                     PreprocessPaymentStatus(ap, initial_session, EfawateerCodeToCyberCode(paymentResult.Error),
-                        paymentResult.Error == 0 ? 6 : 100, exData);
+                        paymentResult.Error == 0 ? 6 : 101, exData);
 
                     if(!parametersList.ContainsKey("Session"))
                         parametersList.Add("Session", session);
