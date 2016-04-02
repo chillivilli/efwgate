@@ -31,7 +31,7 @@ namespace Gateways
         {
             public string JoebppsTrx { get; set; }
             public int Error { get; set; }
-            public DateTime StmtDate { get; set; }
+            public DateTime TimeStamp { get; set; }
             public StringList Params { get; set; }
         }
 
@@ -65,32 +65,36 @@ namespace Gateways
 
         public void Initialize(string data)
         {
-            Audit("Initialize, GateProfileID=" + GateProfileID);
+            log("Initialize, GateProfileID=" + GateProfileID);
 
             try
             {
                 _config.Load(data);
+                Logger.Initialize(_config.DetailedLog, log);
             }
             catch (Exception ex)
             {
-                Audit("Initialize exception: " + ex);
+                Logger.Error(ex, "Initialize failed");
+                throw;
             }
         }
 
         public void ProcessPayment(object paymentData, object operatorData, object exData)
         {
             var initial_session = string.Empty;
-            Audit("Efawateer processing...");
+            Logger.Info("Efawateer process payment");
 
             try
             {
                 var paymentRow = paymentData as DataRow;
-                if (paymentRow == null) throw new Exception("unable to extract paymentData");
+                if (paymentRow == null)
+                    throw new Exception("unable to extract paymentData");
 
                 var operatorRow = operatorData as DataRow;
-                if (operatorRow == null) throw new Exception("unable to extract operatorRow");
+                if (operatorRow == null)
+                    throw new Exception("unable to extract operatorRow");
 
-                AuditTableRows(paymentRow, operatorRow);
+                LogTableRows(paymentRow, operatorRow);
 
                 initial_session = (paymentRow["InitialSessionNumber"] as string);
 
@@ -118,23 +122,20 @@ namespace Gateways
                     parametersList = new StringList(paymentParams, ";");
                     session = parametersList.Get("Session");
                 }
-
-                if (!parametersList.ContainsKey("InitializeDateTime"))
-                    parametersList.Add("InitializeDateTime", processDateStr);
-
+                
                 var cyberplatOperatorId = (int) paymentRow["CyberplatOperatorID"];
 
                 // отмена платежа вручную
                 if (status == 103 || status == 104)
                 {
-                    Audit("Отмена платежа вручную");
+                    Logger.Info("Отмена платежа вручную");
                     PreprocessPaymentStatus(ap, initial_session, EfawateerCodeToCyberCode(error), 100, exData);
                     return;
                 }
                 
                 if (status == 6)
                 {
-                    Audit("Проведение платежа");
+                    Logger.Info("Проведение платежа");
                     var result = PaymentInquiryRequest(cyberplatOperatorId, parametersList, session);
                     PreprocessPaymentStatus(ap, initial_session, EfawateerCodeToCyberCode(result.Error), result.Error == 0 ? 7 : 100, exData);                    
                     return;
@@ -155,7 +156,7 @@ namespace Gateways
                         case PaymentType.Postpaid:
                             paymentResult = BillInquiryRequest(cyberplatOperatorId, parametersList);
                             if (paymentResult.Error == 0)
-                                paymentResult = BillPaymentRequest(cyberplatOperatorId, parametersList, session);
+                                paymentResult = BillPaymentRequest(cyberplatOperatorId, parametersList, session, processDateStr);
                             break;
                         default:
                             throw new Exception("Неизвестный тип платежа");
@@ -164,11 +165,11 @@ namespace Gateways
                 catch (TimeoutException exception)
                 {
                     paymentResult.Error = 100;
-                    Audit("Ошибка проведения платежа (timeout) " + exception.Message);
+                    Logger.Error(exception, "Process payment timeout");
                 }
                 catch (Exception exception)
                 {
-                    Audit("Ошибка проведения платежа " + exception.Message);
+                    Logger.Critical(exception,  "Process payment unexpected exception");
                 }
 
                 if (paymentResult.Error == 370)
@@ -178,10 +179,10 @@ namespace Gateways
                     var s = "";
                     if (!string.IsNullOrEmpty(paymentResult.JoebppsTrx))
                         s = paymentResult.JoebppsTrx;
-                    if (paymentResult.StmtDate == default (DateTime))
-                        paymentResult.StmtDate = DateTime.Now;
+                    if (paymentResult.TimeStamp == default (DateTime))
+                        paymentResult.TimeStamp = DateTime.Now;
 
-                    PreprocessPayment(ap, initial_session, s, paymentResult.StmtDate, exData);       
+                    PreprocessPayment(ap, initial_session, s, paymentResult.TimeStamp, exData);       
 
                     // 1-6 - эти статусы можешь юзать, пока проведением платежа занимаешься
                     PreprocessPaymentStatus(ap, initial_session, EfawateerCodeToCyberCode(paymentResult.Error),
@@ -198,31 +199,31 @@ namespace Gateways
             }
             catch (Exception ex)
             {
-                Audit(string.Format("ProcessPayment (initial_session={0}) exception: {1}", initial_session, ex.ToString()));
+                Logger.Critical(ex, string.Format("ProcessPayment unexpected error (initial_session={0})", initial_session));
             }
         }
 
         /// <summary>использвалось для отладки</summary>
-        private void AuditTableRows(DataRow paymentRow, DataRow operatorRow)
+        private void LogTableRows(DataRow paymentRow, DataRow operatorRow)
         {
-            Audit("paymentRow");
+            Logger.Trace("paymentRow");
             foreach (var column in paymentRow.Table.Columns.OfType<DataColumn>())
             {
-                Audit(string.Format("column {0} value '{1}'", column.ColumnName,
-                    (paymentRow[column.ColumnName] is DBNull) ? "null" : paymentRow[column.ColumnName]));
+                Logger.Trace("column {0} value '{1}'", column.ColumnName,
+                    (paymentRow[column.ColumnName] is DBNull) ? "null" : paymentRow[column.ColumnName]);
             }
 
-            Audit("operatorRow");
+            Logger.Trace("operatorRow");
             foreach (var column in operatorRow.Table.Columns.OfType<DataColumn>())
             {
                 try
                 {
-                    Audit(string.Format("column {0} value '{1}'", column.ColumnName,
+                    Logger.Trace(string.Format("column {0} value '{1}'", column.ColumnName,
                         (operatorRow[column.ColumnName] is DBNull) ? "null" : operatorRow[column.ColumnName]));
                 }
                 catch (Exception)
                 {
-                    Audit(string.Format("column {0} value 'exception'", column.ColumnName));
+                    Logger.Trace(string.Format("column {0} value 'exception'", column.ColumnName));
                 }
             }
         }
@@ -280,7 +281,7 @@ namespace Gateways
 
             accInfo.Element("BillerCode").Value = billerCode.ToString(CultureInfo.InvariantCulture);
 
-            Audit("PaymentInquiryRequest request:" + request);
+            Logger.Info("PaymentInquiryRequest request:" + request);
 
             request.Element("MsgFooter").Element("Security").Element("Signature").Value =
                 signer.SignData(request.Element("MsgBody").ToString());
@@ -291,7 +292,7 @@ namespace Gateways
             }, new EndpointAddress(_config.PaymentInquryUrl));
             var response = service.Inquire(guid, token, request);
 
-            Audit("PaymentInquiryRequest response:" + response);
+            Logger.Info("PaymentInquiryRequest response:" + response);
 
             if (response.Element("MsgBody") != null)
             {                
@@ -301,7 +302,7 @@ namespace Gateways
             else
                 result.Error = Convert.ToInt32(response.Element("MsgHeader").Element("Result").Element("ErrorCode").Value);
 
-            result.StmtDate = DateTime.Now;
+            result.TimeStamp = DateTime.Now;
 
             return result;
         }
@@ -323,7 +324,7 @@ namespace Gateways
                 var formatedPaymentParams = paymentData.Params.FormatParameters(operatorFormatString);
                 var parametersList = new StringList(formatedPaymentParams, ";");
 
-                var paymentType = (PaymentType) Enum.Parse(typeof (PaymentType), parametersList.Get("PymentType"));                
+                var paymentType = (PaymentType) Enum.Parse(typeof (PaymentType), parametersList.Get("PaymentType"));                
                 switch (paymentType)
                 {
                     case PaymentType.Prepaid:
@@ -340,7 +341,7 @@ namespace Gateways
             }
             catch (Exception ex)
             {
-                Audit("ProcessOnlineCheck exception: " + ex.Message);
+                Logger.Critical(ex, "ProcessOnlineCheck unexpected exception");
                 responseResult = 30;
             }
 
@@ -401,7 +402,7 @@ namespace Gateways
             }, new EndpointAddress(_config.TokenUrl));
             var authenticate = token.Authenticate(_tokenGuid.ToString(), Convert.ToInt32(_config.CustomerCode), _config.Password);
 
-            Audit("Authenticate" + authenticate);
+            Logger.Info("Authenticate" + authenticate);
 
             var body = authenticate.Element("MsgBody");
             if (body == null)
@@ -477,7 +478,7 @@ namespace Gateways
                 billInfo.Element("DueAmt").Value = parametersList["DueAmt"];
 
 
-            Audit("Validation request:" + request);
+            Logger.Info("Validation request:" + request);
 
             request.Element("MsgFooter").Element("Security").Element("Signature").Value =
                 signer.SignData(request.Element("MsgBody").ToString());
@@ -488,7 +489,7 @@ namespace Gateways
             }, new EndpointAddress(_config.ValidationUrl));
             var response = service.Validate(guid, token, request);
 
-            Audit("Validation response:" + response);
+            Logger.Info("Validation response:" + response);
 
             billInfo = response.Element("MsgBody").Element("BillingInfo");
 
@@ -527,7 +528,7 @@ namespace Gateways
 
             var now = DateTime.Now;
             var time = now.ToString("s");
-            var guid = GenerateGuid();
+            var guid = session;// GenerateGuid();
 
             request.Element("MsgHeader").Element("TmStp").Value = time;
             request.Element("MsgHeader").Element("TrsInf").Element("SdrCode").Value = _config.CustomerCode;
@@ -551,7 +552,7 @@ namespace Gateways
             trxInf.Element("ProcessDate").Value = parametersList.Get("InitializeDateTime");
             trxInf.Element("BankTrxID").Value = session;
 
-            Audit("PrepaidPaymentRequest request:" + request);
+            Logger.Info("PrepaidPaymentRequest request:" + request);
 
             request.Element("MsgFooter").Element("Security").Element("Signature").Value =
                 signer.SignData(request.Element("MsgBody").ToString());
@@ -562,11 +563,19 @@ namespace Gateways
             }, new EndpointAddress(_config.PrepaidUrl));
             var response = service.Pay(guid, token, request);
 
-            Audit("PrepaidPaymentRequest response:" + response);
+            Logger.Info("PrepaidPaymentRequest response:" + response);
 
             trxInf = response.Element("MsgBody").Element("TrxInf");
             result.JoebppsTrx = trxInf.Element("JOEBPPSTrx").Value;
-            result.StmtDate = DateTime.Parse(trxInf.Element("STMTDate").Value);
+            string stmtdate = trxInf.Element("STMTDate").Value;
+            if (parametersList.ContainsKey("STMTDate"))
+                parametersList["STMTDate"] = stmtdate;
+            else
+            {
+                parametersList.Add("STMTDate", stmtdate);
+            }
+
+            result.TimeStamp = DateTime.Parse(trxInf.Element("TmStp").Value);
             result.Error = Convert.ToInt32(trxInf.Element("Result").Element("ErrorCode").Value);
             result.Params = parametersList;
 
@@ -603,7 +612,7 @@ namespace Gateways
             dateRange.Element("StartDt").Value = now.AddDays(-_config.StartDt).ToString("s");
             dateRange.Element("EndDt").Value = time;
 
-            Audit("BillInquiryRequest request:" + request);
+            Logger.Info("BillInquiryRequest request:" + request);
 
             request.Element("MsgFooter").Element("Security").Element("Signature").Value =
                 signer.SignData(request.Element("MsgBody").ToString());
@@ -614,7 +623,7 @@ namespace Gateways
             }, new EndpointAddress(_config.InquiryUrl));
             var response = service.Inquire(guid, token, request);
 
-            Audit("BillInquiryRequest response:" + response);
+            Logger.Info("BillInquiryRequest response:" + response);
 
             var errorCode = Convert.ToInt32(response.Element("MsgHeader").Element("Result").Element("ErrorCode").Value);
 
@@ -696,7 +705,7 @@ namespace Gateways
             };
         }
 
-        public PaymentResult BillPaymentRequest(int cyberplatOperatorId, StringList parametersList, string session)
+        public PaymentResult BillPaymentRequest(int cyberplatOperatorId, StringList parametersList, string session, string initializeDateTime)
         {
             var result = new PaymentResult
             {
@@ -741,10 +750,10 @@ namespace Gateways
             trxInf.Element("DueAmt").Value = parametersList.Get("DueAmt");
             trxInf.Element("PaidAmt").Value = parametersList.Get("DueAmt");
 
-            trxInf.Element("ProcessDate").Value = parametersList.Get("InitializeDateTime");
+            trxInf.Element("ProcessDate").Value = initializeDateTime;
             trxInf.Element("BankTrxID").Value = session;
 
-            Audit("BillPaymentRequest request:" + request);
+            Logger.Info("BillPaymentRequest request:" + request);
 
             request.Element("MsgFooter").Element("Security").Element("Signature").Value =
                 signer.SignData(request.Element("MsgBody").ToString());
@@ -755,7 +764,7 @@ namespace Gateways
             }, new EndpointAddress(_config.PaymentUrl));
             var response = service.PayBill(guid, token, request);
 
-            Audit("BillPaymentRequest response:" + response);
+            Logger.Info("BillPaymentRequest response:" + response);
 
             trxInf = response.Element("MsgBody").Element("Transactions").Element("TrxInf");
             result.Error = Convert.ToInt32(trxInf.Element("Result").Element("ErrorCode").Value);
@@ -763,24 +772,21 @@ namespace Gateways
             if (trxInf.Element("JOEBPPSTrx") != null)
                 result.JoebppsTrx = trxInf.Element("JOEBPPSTrx").Value;
 
-            if (trxInf.Element("STMTDate") != null)
-                result.StmtDate = DateTime.Parse(trxInf.Element("STMTDate").Value);
+            string stmtdate = trxInf.Element("STMTDate").Value;
+            if (parametersList.ContainsKey("STMTDate"))
+                parametersList["STMTDate"] = stmtdate;
+            else
+            {
+                parametersList.Add("STMTDate", stmtdate);
+            }
+
+            result.TimeStamp = DateTime.Parse(trxInf.Element("TmStp").Value);
 
             result.Params = parametersList;
 
             return result;
         }
-
-        private void Audit(string message)
-        {
-#if !TEST
-            if (_config.DetailedLog)
-                log(message);
-#else
-            System.Diagnostics.Debug.WriteLine(message);
-#endif
-        }
-
+              
         public string GetData(string request, string parameters)
         {
             try

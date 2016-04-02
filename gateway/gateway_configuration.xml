@@ -14,8 +14,8 @@
     <customer_code hint="код клиента">158</customer_code>    
     <password hint="пароль клиента">Test@1234</password>
     <!-- сертификат должен быть импортирован с ключом "Mark this key as exportable." сделать ключ экспортируемым ...-->
-    <sign_crt hint="sign certificate thumbprint">ARKAIM-TEST</sign_crt>
-    <verify_crt hint="verify certificate thumbprint">ARKAIM-TEST</verify_crt>
+    <sign_crt hint="sign certificate thumbprint">353150B628FE8CE2B95A62C7F1603A96F9E8A2F5</sign_crt>
+    <verify_crt hint="verify certificate thumbprint">26 16 89 da 9b 3a 1b 7b 53 8a 3e 2f 9a b7 5d dc 14 25 25 d1</verify_crt>
     
     <detail_log hint="детальный лог">true</detail_log>
     <info>true</info>
