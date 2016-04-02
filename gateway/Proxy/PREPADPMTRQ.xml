@@ -1,0 +1,35 @@
+﻿<MFEP>
+  <MsgHeader>
+    <TmStp>?</TmStp>
+    <GUID>?</GUID>
+    <TrsInf>
+      <SdrCode>?</SdrCode>
+      <RcvCode>1</RcvCode>
+      <ReqTyp>PREPADPMTRQ</ReqTyp>
+    </TrsInf>
+  </MsgHeader>
+  <MsgBody>
+    <TrxInf>
+      <AcctInfo>
+        <BillingNo>?</BillingNo>
+        <BillerCode>?</BillerCode>
+      </AcctInfo>
+      <BankTrxID>?</BankTrxID>
+      <ValidationCode>?</ValidationCode>
+      <PmtStatus>PmtNew</PmtStatus>
+      <DueAmt>?</DueAmt>
+      <PaidAmt>?</PaidAmt>
+      <ProcessDate>?</ProcessDate>
+      <AccessChannel>PSP</AccessChannel>
+      <PaymentMethod>CASH</PaymentMethod>
+      <ServiceTypeDetails>
+        <ServiceType>Prepaid</ServiceType>
+      </ServiceTypeDetails>
+    </TrxInf>
+  </MsgBody>
+  <MsgFooter>
+    <Security>
+      <Signature>?</Signature>
+    </Security>
+  </MsgFooter>
+</MFEP>

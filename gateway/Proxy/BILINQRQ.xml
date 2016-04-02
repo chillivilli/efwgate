@@ -1,0 +1,28 @@
+﻿<MFEP>
+  <MsgHeader>
+    <TmStp>?</TmStp>
+    <TrsInf>
+      <SdrCode>?</SdrCode>
+      <RcvCode>1</RcvCode>
+      <ReqTyp>BILINQRQ</ReqTyp>
+    </TrsInf>
+  </MsgHeader>
+  <MsgBody>
+    <AcctInfo>
+      <BillingNo>?</BillingNo>
+      <BillerCode>?</BillerCode>
+    </AcctInfo>    
+    <ServiceType>?</ServiceType>
+    <DateRange>
+      <StartDt>?</StartDt>
+      <EndDt>?</EndDt>
+    </DateRange>
+    <IncPayments>false</IncPayments>
+    <IncPaidBills>false</IncPaidBills>
+  </MsgBody>
+  <MsgFooter>
+    <Security>
+      <Signature>?</Signature>
+    </Security>
+  </MsgFooter>
+</MFEP>

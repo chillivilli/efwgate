@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EfawateerTests", "..\tests\EfawateerTests.csproj", "{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EfawateerGateway", "gateway\EfawateerGateway.csproj", "{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		DebugTest|Any CPU = DebugTest|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.DebugTest|Any CPU.ActiveCfg = DebugTest|Any CPU
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.DebugTest|Any CPU.Build.0 = DebugTest|Any CPU
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.DebugTest|Any CPU.ActiveCfg = DebugTest|Any CPU
+		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.DebugTest|Any CPU.Build.0 = DebugTest|Any CPU
+		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,23 @@
+﻿<gateway id="909" name="eFAWATEER" file="EfawateerGateway.dll" type="Gateways.EfawateerGateway">
+  <template>        
+    <token_url hint="Url запроса аутентификация">http://cbj-pres-test.e-fawateer.com.jo:6001/Token.svc</token_url>                
+    <prepare_validation_url hint="проверка возможности оплаты">http://cbj-pres-test.e-fawateer.com.jo:6018/PrepaidValidation.svc</prepare_validation_url>
+    <inquiry_url hint="Url запроса получение реквизитов счета">http://cbj-pres-test.e-fawateer.com.jo:6004/BillInquiry.svc</inquiry_url>
+    <prepaid_payment_url hint="">http://cbj-pres-test.e-fawateer.com.jo:6017/PrepaidPayment.svc</prepaid_payment_url>
+    <payment_url hint="Url запроса оплата">http://cbj-pres-test.e-fawateer.com.jo:6003/BillPayment.svc</payment_url>
+    <payment_inqury_url>http://cbj-pres-test.e-fawateer.com.jo:6019/PaymentInquiry.svc</payment_inqury_url>
+    <biller_list_url>http://cbj-pres-test.e-fawateer.com.jo:6010/BillersList.svc</biller_list_url>
+    <timeout>10000</timeout>
+    <startdt hint="Количество дней назад для запроса счетов">10</startdt>
+
+    <!--(предоставляется eFAWATEER)-->
+    <customer_code hint="код клиента">158</customer_code>    
+    <password hint="пароль клиента">Test@1234</password>
+    <!-- сертификат должен быть импортирован с ключом "Mark this key as exportable." сделать ключ экспортируемым ...-->
+    <sign_crt hint="sign certificate thumbprint">ARKAIM-TEST</sign_crt>
+    <verify_crt hint="verify certificate thumbprint">ARKAIM-TEST</verify_crt>
+    
+    <detail_log hint="детальный лог">true</detail_log>
+    <info>true</info>
+  </template>
+</gateway>

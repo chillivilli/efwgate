@@ -1,0 +1,36 @@
+﻿<MFEP>
+  <MsgHeader>
+    <TmStp>?</TmStp>
+    <TrsInf>
+      <SdrCode>?</SdrCode>
+      <RcvCode>1</RcvCode>
+      <ReqTyp>BILPMTRQ</ReqTyp>
+    </TrsInf>
+  </MsgHeader>
+  <MsgBody>
+    <Transactions>
+      <TrxInf>
+        <AcctInfo>
+          <BillingNo>?</BillingNo>
+          <BillNo>?</BillNo>
+          <BillerCode>?</BillerCode>
+        </AcctInfo>
+        <BankTrxID>?</BankTrxID>
+        <PmtStatus>PmtNew</PmtStatus>        
+        <DueAmt>?</DueAmt>
+        <PaidAmt>?</PaidAmt>
+        <ProcessDate>?</ProcessDate>
+        <AccessChannel>ATM</AccessChannel>
+        <PaymentMethod>CASH</PaymentMethod>
+        <ServiceTypeDetails>
+          <ServiceType>Electricity</ServiceType>
+        </ServiceTypeDetails>
+      </TrxInf>
+    </Transactions>
+  </MsgBody>
+  <MsgFooter>
+    <Security>
+      <Signature>?</Signature>
+    </Security>
+  </MsgFooter>
+</MFEP>

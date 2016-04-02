@@ -1,0 +1,29 @@
+﻿<MFEP>
+  <MsgHeader>
+    <TmStp>?</TmStp>
+    <GUID>?</GUID>
+    <TrsInf>
+      <SdrCode>158</SdrCode>
+      <RcvCode>1</RcvCode>
+      <ReqTyp>PREPADVALRQ</ReqTyp>
+    </TrsInf>
+  </MsgHeader>
+  <MsgBody>
+    <BillingInfo>
+      <AcctInfo>
+        <BillingNo>?</BillingNo>
+        <BillerCode>?</BillerCode>
+      </AcctInfo>
+      <DueAmt>?</DueAmt>
+      <ServiceTypeDetails>
+        <ServiceType>?</ServiceType>
+        <PrepaidCat>?</PrepaidCat>
+      </ServiceTypeDetails>
+    </BillingInfo>
+  </MsgBody>
+  <MsgFooter>
+    <Security>
+      <Signature>?</Signature>
+    </Security>
+  </MsgFooter>
+</MFEP>
