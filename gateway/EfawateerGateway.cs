@@ -186,6 +186,9 @@ namespace Gateways
                 var error = (int) paymentRow["ErrorCode"];
                 var paymentParams = paymentRow["Params"] as string;
                 var processDate = DateTime.Parse(paymentRow["InitializeDateTime"].ToString());
+                string amount = null;
+                if(paymentRow["Amount"] != null)
+                    amount = paymentRow["Amount"].ToString();
                 
                 string operatorFormatString = operatorRow["OsmpFormatString"] is DBNull ? "" : operatorRow["OsmpFormatString"] as string;
 
@@ -206,21 +209,28 @@ namespace Gateways
                 // отмена платежа вручную
                 if (status == 103 || status == 104)
                 {
-                    Logger.Info("Отмена платежа вручную");
+                    Logger.Info("Manual cancel payment");
                     PreprocessPaymentStatus(ap, initial_session, EfawateerCodeToCyberCode(error), 100, exData);
                     return;
                 }
                 
                 if (status == 6)
                 {
-                    Logger.Info("Проведение платежа");
-                    var result = PaymentInquiryRequest(cyberplatOperatorId, parametersList, session, processDate);
+                    Logger.Info("Processing payment");
+                    var result = PaymentInquiryRequest(cyberplatOperatorId, parametersList, session, processDate, amount);
 
-                    int paymentState = 100;
-                    if (result.Error == 0 && "PmtComplt".Equals(result.State))
-                        paymentState = 7;
-
-                    PreprocessPaymentStatus(ap, initial_session, EfawateerCodeToCyberCode(result.Error), paymentState, exData);                    
+                    int paymentState = 6;
+                    if (result.Error != 0)
+                    {
+                        paymentState = 100;
+                    }
+                    else
+                    {
+                        if ("PmtComplt".Equals(result.State))
+                            paymentState = 7;
+                    }
+                    
+                    PreprocessPaymentStatus(ap, initial_session, EfawateerCodeToCyberCode(result.Error), paymentState, exData);
                     return;
                 }
 
@@ -234,12 +244,12 @@ namespace Gateways
                         case PaymentType.Prepaid:
                             paymentResult = PrepaidValidationRequest(cyberplatOperatorId, parametersList);
                             if (paymentResult.Error == 0)
-                                paymentResult = PrepaidPaymentRequest(cyberplatOperatorId, paymentResult.Params, session, processDate);
+                                paymentResult = PrepaidPaymentRequest(cyberplatOperatorId, paymentResult.Params, session, processDate, amount);
                             break;
                         case PaymentType.Postpaid:
                             paymentResult = BillInquiryRequest(cyberplatOperatorId, parametersList);
                             if (paymentResult.Error == 0)
-                                paymentResult = BillPaymentRequest(cyberplatOperatorId, parametersList, session, processDate);
+                                paymentResult = BillPaymentRequest(cyberplatOperatorId, parametersList, session, processDate, amount);
                             break;
                         default:
                             throw new Exception("Неизвестный тип платежа");
@@ -413,7 +423,7 @@ namespace Gateways
             return cyberplatOpertaroId%1000;
         }
 
-        public PaymentResult PaymentInquiryRequest(int cyberplatOperatorId, StringList parametersList, string session, DateTime initDateTime)
+        public PaymentResult PaymentInquiryRequest(int cyberplatOperatorId, StringList parametersList, string session, DateTime initDateTime, string amount)
         {
             var result = new PaymentResult
             {
@@ -444,7 +454,7 @@ namespace Gateways
                 trxInf.Element("ValidationCode").Remove();
 
             trxInf.Element("DueAmt").Value = parametersList.Get("DueAmt");
-            trxInf.Element("PaidAmt").Value = parametersList.Get("DueAmt");
+            trxInf.Element("PaidAmt").Value = amount;
             trxInf.Element("ProcessDate").Value = initDateTime.ToString(EFAWATEER_DATE_FORMAT);
             trxInf.Element("PaymentType").Value = parametersList.Get("PaymentType");
             trxInf.Element("ServiceTypeDetails").Element("ServiceType").Value = parametersList.Get("ServiceType");
@@ -534,6 +544,8 @@ namespace Gateways
             else
                 billInfo.Element("DueAmt").Value = parametersList.Get("DueAmt");
             
+            //billInfo.Element("PaidAmt").Value = parametersList.Get("")
+
             request.Element("MsgFooter").Element("Security").Element("Signature").Value =
                 signer.SignData(request.Element("MsgBody").ToString());
 
@@ -559,6 +571,8 @@ namespace Gateways
                     parametersList.Remove("ValidationCode");
 
                 parametersList.Add("ValidationCode", validationCode);
+                string dueAmt = billInfo.Element("DueAmt").Value;
+                parametersList.Set("DueAmt", dueAmt);
             }
 
             return new PaymentResult
@@ -568,7 +582,7 @@ namespace Gateways
             };
         }
 
-        public PaymentResult PrepaidPaymentRequest(int cyberplatOperatorId, StringList parametersList, string session, DateTime initDateTime)
+        public PaymentResult PrepaidPaymentRequest(int cyberplatOperatorId, StringList parametersList, string session, DateTime initDateTime, string amount)
         {
 
             var result = new PaymentResult
@@ -603,7 +617,7 @@ namespace Gateways
             trxInf.Element("ServiceTypeDetails").Element("ServiceType").Value = parametersList.Get("ServiceType");
 
             trxInf.Element("DueAmt").Value = parametersList.Get("DueAmt");
-            trxInf.Element("PaidAmt").Value = parametersList.Get("DueAmt");
+            trxInf.Element("PaidAmt").Value = amount;
             trxInf.Element("ValidationCode").Value = parametersList.Get("ValidationCode");
             trxInf.Element("ProcessDate").Value = initDateTime.ToString(EFAWATEER_DATE_FORMAT);
             trxInf.Element("BankTrxID").Value = session;
@@ -763,7 +777,7 @@ namespace Gateways
             };
         }
 
-        public PaymentResult BillPaymentRequest(int cyberplatOperatorId, StringList parametersList, string session, DateTime initializeDateTime)
+        public PaymentResult BillPaymentRequest(int cyberplatOperatorId, StringList parametersList, string session, DateTime initializeDateTime, string amount)
         {
             var result = new PaymentResult
             {
@@ -806,7 +820,7 @@ namespace Gateways
             trxInf.Element("ServiceTypeDetails").Element("ServiceType").Value = parametersList.Get("ServiceType");
 
             trxInf.Element("DueAmt").Value = parametersList.Get("DueAmt");
-            trxInf.Element("PaidAmt").Value = parametersList.Get("DueAmt");
+            trxInf.Element("PaidAmt").Value = amount;
 
             trxInf.Element("ProcessDate").Value = initializeDateTime.ToString(EFAWATEER_DATE_FORMAT);
             trxInf.Element("BankTrxID").Value = session;

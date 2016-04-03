@@ -20,7 +20,7 @@
         <DueAmt>?</DueAmt>
         <PaidAmt>?</PaidAmt>
         <ProcessDate>?</ProcessDate>
-        <AccessChannel>ATM</AccessChannel>
+        <AccessChannel>PSP</AccessChannel>
         <PaymentMethod>CASH</PaymentMethod>
         <ServiceTypeDetails>
           <ServiceType>Electricity</ServiceType>

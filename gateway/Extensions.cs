@@ -21,6 +21,14 @@ namespace EfawateerGateway
             throw new KeyNotFoundException(msg);
         }
 
+        public static void Set(this StringList strings, string name, string value)
+        {
+            if (strings.ContainsKey(name))
+                strings[name] = value;
+            else
+                strings.Add(name, value);
+        }
+
         public static bool HasValue(this StringList strings, string name)
         {
             if (strings.ContainsKey(name))
