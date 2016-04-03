@@ -36,6 +36,8 @@ namespace Gateways
             public int Error { get; set; }
             public DateTime TimeStamp { get; set; }
             public StringList Params { get; set; }
+
+            public string State { get; set; }
         }
 
         // фатальные ошибки
@@ -122,7 +124,7 @@ namespace Gateways
                     case PaymentType.Prepaid:
                         paymentResult = PrepaidValidationRequest(paymentData.CyberplatOperatorID, parametersList);
                         if (paymentResult.Error == 0)
-                            param = string.Format("DUEAMOUNT={0}\r\nLOWERAMOUNT=0\r\nUPPERAMOUNT=0", paymentResult.Params.Get("DueAmt"));
+                            param = string.Format("DUEAMOUNT={0}", paymentResult.Params.Get("DueAmt"));
                         break;
                     case PaymentType.Postpaid:
                         paymentResult = BillInquiryRequest(paymentData.CyberplatOperatorID, parametersList);
@@ -213,7 +215,12 @@ namespace Gateways
                 {
                     Logger.Info("Проведение платежа");
                     var result = PaymentInquiryRequest(cyberplatOperatorId, parametersList, session, processDate);
-                    PreprocessPaymentStatus(ap, initial_session, EfawateerCodeToCyberCode(result.Error), result.Error == 0 ? 7 : 100, exData);                    
+
+                    int paymentState = 100;
+                    if (result.Error == 0 && "PmtComplt".Equals(result.State))
+                        paymentState = 7;
+
+                    PreprocessPaymentStatus(ap, initial_session, EfawateerCodeToCyberCode(result.Error), paymentState, exData);                    
                     return;
                 }
 
@@ -475,7 +482,10 @@ namespace Gateways
             if (response.Element("MsgBody") != null)
             {
                 trxInf = response.Element("MsgBody").Element("Transactions").Element("TrxInf");
+                
                 result.Error = Convert.ToInt32(trxInf.Element("Result").Element("ErrorCode").Value);
+                result.State = trxInf.Element("PmtStatus").Value;
+                
             }
             else
                 result.Error = Convert.ToInt32(response.Element("MsgHeader").Element("Result").Element("ErrorCode").Value);
@@ -623,7 +633,7 @@ namespace Gateways
                 parametersList.Add("STMTDate", stmtdate);
             }
 
-            result.TimeStamp = DateTime.Parse(trxInf.Element("TmStp").Value);
+            result.TimeStamp = DateTime.Parse(response.Element("MsgHeader").Element("TmStp").Value);
             result.Error = Convert.ToInt32(trxInf.Element("Result").Element("ErrorCode").Value);
             result.Params = parametersList;
 
@@ -830,7 +840,7 @@ namespace Gateways
                 parametersList.Add("STMTDate", stmtdate);
             }
 
-            result.TimeStamp = DateTime.Parse(trxInf.Element("TmStp").Value);
+            result.TimeStamp = DateTime.Parse(response.Element("MsgHeader").Element("TmStp").Value);
 
             result.Params = parametersList;
 
