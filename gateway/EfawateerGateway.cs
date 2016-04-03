@@ -346,87 +346,7 @@ namespace Gateways
             }
         }
 
-        public PaymentResult PaymentInquiryRequest(int cyberplatOperatorId, StringList parametersList, string session, DateTime initDateTime)
-        {
-            var result = new PaymentResult
-            {
-                Error = 0
-            };
-
-            var billerCode = ExpandBillerCodeFromCyberplatOpertaroId(cyberplatOperatorId);
-
-            var token = Authenticate();
-            var request = GetRequestContent(Pmtinqrq);
-            var signer = new EfawateerSigner(_config.SignCertificateThumb, _config.VerifyCertificateThumb);
-
-            var now = DateTime.Now;
-            var time = now.ToString("s");
-            var guid = GenerateGuid();
-
-            request.Element("MsgHeader").Element("TmStp").Value = time;
-            request.Element("MsgHeader").Element("TrsInf").Element("SdrCode").Value = _config.CustomerCode;
-
-            var trxInf = request.Element("MsgBody").Element("Transactions").Element("TrxInf");
-
-            trxInf.Element("PmtGuid").Value = session;
-            trxInf.Element("ParTrxID").Value = session;
-
-            if (parametersList.ContainsKey("ValidationCode"))
-                trxInf.Element("ValidationCode").Value = parametersList["ValidationCode"];
-            else
-                trxInf.Element("ValidationCode").Remove();
-
-            trxInf.Element("DueAmt").Value = parametersList.Get("DueAmt");
-            trxInf.Element("PaidAmt").Value = parametersList.Get("DueAmt");
-            trxInf.Element("ProcessDate").Value = initDateTime.ToString(EFAWATEER_DATE_FORMAT);
-            trxInf.Element("PaymentType").Value = parametersList.Get("PaymentType");
-            trxInf.Element("ServiceTypeDetails").Element("ServiceType").Value = parametersList.Get("ServiceType");
-
-            trxInf.Element("ServiceTypeDetails").Element("PrepaidCat").Remove();
-
-            var accInfo = trxInf.Element("AcctInfo");
-
-            if (!parametersList.ContainsKey("BillingNo") || parametersList["BillingNo"].Contains("#"))
-            {
-                accInfo.Element("BillingNo").Remove();
-                accInfo.Element("BillNo").Remove();
-            }
-            else
-            {
-                accInfo.Element("BillingNo").Value = parametersList["BillingNo"];
-                accInfo.Element("BillNo").Value = parametersList["BillingNo"];
-            }
-
-            accInfo.Element("BillerCode").Value = billerCode.ToString(CultureInfo.InvariantCulture);
-
-            Logger.Info("PaymentInquiryRequest request:" + request);
-
-            request.Element("MsgFooter").Element("Security").Element("Signature").Value =
-                signer.SignData(request.Element("MsgBody").ToString());
-
-            var service = new PaymentInquiryClient(new WSHttpBinding(SecurityMode.None, true)
-            {
-                ReceiveTimeout = _config.Timeout
-            }, new EndpointAddress(_config.PaymentInquryUrl));
-            var response = service.Inquire(guid, token, request);
-
-            Logger.Info("PaymentInquiryRequest response:" + response);
-
-            if (response.Element("MsgBody") != null)
-            {                
-                trxInf = response.Element("MsgBody").Element("Transactions").Element("TrxInf");
-                result.Error = Convert.ToInt32(trxInf.Element("Result").Element("ErrorCode").Value);
-            }
-            else
-                result.Error = Convert.ToInt32(response.Element("MsgHeader").Element("Result").Element("ErrorCode").Value);
-
-            result.TimeStamp = DateTime.Now;
-
-            return result;
-        }
-        
-
-        
+    
 
         private string GenerateGuid()
         {
@@ -485,6 +405,88 @@ namespace Gateways
         {
             return cyberplatOpertaroId%1000;
         }
+
+        public PaymentResult PaymentInquiryRequest(int cyberplatOperatorId, StringList parametersList, string session, DateTime initDateTime)
+        {
+            var result = new PaymentResult
+            {
+                Error = 0
+            };
+
+            var billerCode = ExpandBillerCodeFromCyberplatOpertaroId(cyberplatOperatorId);
+
+            var token = Authenticate();
+            var request = GetRequestContent(Pmtinqrq);
+            var signer = new EfawateerSigner(_config.SignCertificateThumb, _config.VerifyCertificateThumb);
+
+            var now = DateTime.Now;
+            var time = now.ToString("s");
+            var guid = GenerateGuid();
+
+            request.Element("MsgHeader").Element("TmStp").Value = time;
+            request.Element("MsgHeader").Element("TrsInf").Element("SdrCode").Value = _config.CustomerCode;
+
+            var trxInf = request.Element("MsgBody").Element("Transactions").Element("TrxInf");
+
+            trxInf.Element("PmtGuid").Value = session;
+            trxInf.Element("ParTrxID").Value = session;
+
+            if (parametersList.ContainsKey("ValidationCode"))
+                trxInf.Element("ValidationCode").Value = parametersList["ValidationCode"];
+            else
+                trxInf.Element("ValidationCode").Remove();
+
+            trxInf.Element("DueAmt").Value = parametersList.Get("DueAmt");
+            trxInf.Element("PaidAmt").Value = parametersList.Get("DueAmt");
+            trxInf.Element("ProcessDate").Value = initDateTime.ToString(EFAWATEER_DATE_FORMAT);
+            trxInf.Element("PaymentType").Value = parametersList.Get("PaymentType");
+            trxInf.Element("ServiceTypeDetails").Element("ServiceType").Value = parametersList.Get("ServiceType");
+
+            trxInf.Element("ServiceTypeDetails").Element("PrepaidCat").Remove();
+
+            var accInfo = trxInf.Element("AcctInfo");
+
+            if (!parametersList.HasValue("BillingNo"))
+            {
+                accInfo.Element("BillingNo").Remove();
+                accInfo.Element("BillNo").Remove();
+            }
+            else
+            {
+                accInfo.Element("BillingNo").Value = parametersList.Get("BillingNo");
+                accInfo.Element("BillNo").Value = parametersList.Get("BillingNo");
+            }
+
+            accInfo.Element("BillerCode").Value = billerCode.ToString(CultureInfo.InvariantCulture);
+
+            Logger.Info("PaymentInquiryRequest request:" + request);
+
+            request.Element("MsgFooter").Element("Security").Element("Signature").Value =
+                signer.SignData(request.Element("MsgBody").ToString());
+
+            var service = new PaymentInquiryClient(new WSHttpBinding(SecurityMode.None, true)
+            {
+                ReceiveTimeout = _config.Timeout
+            }, new EndpointAddress(_config.PaymentInquryUrl));
+            var response = service.Inquire(guid, token, request);
+
+            Logger.Info("PaymentInquiryRequest response:" + response);
+
+            if (response.Element("MsgBody") != null)
+            {
+                trxInf = response.Element("MsgBody").Element("Transactions").Element("TrxInf");
+                result.Error = Convert.ToInt32(trxInf.Element("Result").Element("ErrorCode").Value);
+            }
+            else
+                result.Error = Convert.ToInt32(response.Element("MsgHeader").Element("Result").Element("ErrorCode").Value);
+
+            result.TimeStamp = DateTime.Now;
+
+            return result;
+        }
+
+
+
 
         public PaymentResult PrepaidValidationRequest(int cyberplatOperatorId, StringList parametersList)
         {
