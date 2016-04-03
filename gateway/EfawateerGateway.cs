@@ -21,6 +21,9 @@ namespace Gateways
     public class EfawateerGateway : BaseGateway, IGateway, IGateGetData
     {
 
+        private const string EFAWATEER_DATE_FORMAT = "yyyy-MM-ddTHH:mm:ss";
+
+
         private enum PaymentType
         {
             Prepaid,
@@ -107,7 +110,7 @@ namespace Gateways
                 var status = (int) paymentRow["StatusID"];
                 var error = (int) paymentRow["ErrorCode"];
                 var paymentParams = paymentRow["Params"] as string;
-                var processDateStr = paymentRow["InitializeDateTime"].ToString();
+                var processDate = DateTime.Parse(paymentRow["InitializeDateTime"].ToString());
                 
                 string operatorFormatString = operatorRow["OsmpFormatString"] is DBNull ? "" : operatorRow["OsmpFormatString"] as string;
 
@@ -136,7 +139,7 @@ namespace Gateways
                 if (status == 6)
                 {
                     Logger.Info("Проведение платежа");
-                    var result = PaymentInquiryRequest(cyberplatOperatorId, parametersList, session);
+                    var result = PaymentInquiryRequest(cyberplatOperatorId, parametersList, session, processDate);
                     PreprocessPaymentStatus(ap, initial_session, EfawateerCodeToCyberCode(result.Error), result.Error == 0 ? 7 : 100, exData);                    
                     return;
                 }
@@ -151,12 +154,12 @@ namespace Gateways
                         case PaymentType.Prepaid:
                             paymentResult = PrepaidValidationRequest(cyberplatOperatorId, parametersList);
                             if (paymentResult.Error == 0)
-                                paymentResult = PrepaidPaymentRequest(cyberplatOperatorId, paymentResult.Params, session);
+                                paymentResult = PrepaidPaymentRequest(cyberplatOperatorId, paymentResult.Params, session, processDate);
                             break;
                         case PaymentType.Postpaid:
                             paymentResult = BillInquiryRequest(cyberplatOperatorId, parametersList);
                             if (paymentResult.Error == 0)
-                                paymentResult = BillPaymentRequest(cyberplatOperatorId, parametersList, session, processDateStr);
+                                paymentResult = BillPaymentRequest(cyberplatOperatorId, parametersList, session, processDate);
                             break;
                         default:
                             throw new Exception("Неизвестный тип платежа");
@@ -190,7 +193,7 @@ namespace Gateways
 
                     if(!parametersList.ContainsKey("Session"))
                         parametersList.Add("Session", session);
-                    UpdatePaymentParams(ap, initial_session, parametersList.GetParamsString(), exData);
+                    UpdatePaymentParams(ap, initial_session, parametersList.Strings, exData);
                 }
 
                 //// ?
@@ -206,29 +209,34 @@ namespace Gateways
         /// <summary>использвалось для отладки</summary>
         private void LogTableRows(DataRow paymentRow, DataRow operatorRow)
         {
-            Logger.Trace("paymentRow");
-            foreach (var column in paymentRow.Table.Columns.OfType<DataColumn>())
+            if (paymentRow != null)
             {
-                Logger.Trace("column {0} value '{1}'", column.ColumnName,
-                    (paymentRow[column.ColumnName] is DBNull) ? "null" : paymentRow[column.ColumnName]);
-            }
-
-            Logger.Trace("operatorRow");
-            foreach (var column in operatorRow.Table.Columns.OfType<DataColumn>())
-            {
-                try
+                Logger.Trace("paymentRow");
+                foreach (var column in paymentRow.Table.Columns.OfType<DataColumn>())
                 {
-                    Logger.Trace(string.Format("column {0} value '{1}'", column.ColumnName,
-                        (operatorRow[column.ColumnName] is DBNull) ? "null" : operatorRow[column.ColumnName]));
+                    Logger.Trace("column {0} value '{1}'", column.ColumnName,
+                        (paymentRow[column.ColumnName] is DBNull) ? "null" : paymentRow[column.ColumnName]);
                 }
-                catch (Exception)
+            }
+            if (operatorRow != null)
+            {
+                Logger.Trace("operatorRow");
+                foreach (var column in operatorRow.Table.Columns.OfType<DataColumn>())
                 {
-                    Logger.Trace(string.Format("column {0} value 'exception'", column.ColumnName));
+                    try
+                    {
+                        Logger.Trace(string.Format("column {0} value '{1}'", column.ColumnName,
+                            (operatorRow[column.ColumnName] is DBNull) ? "null" : operatorRow[column.ColumnName]));
+                    }
+                    catch (Exception)
+                    {
+                        Logger.Trace(string.Format("column {0} value 'exception'", column.ColumnName));
+                    }
                 }
             }
         }
 
-        public PaymentResult PaymentInquiryRequest(int cyberplatOperatorId, StringList parametersList, string session)
+        public PaymentResult PaymentInquiryRequest(int cyberplatOperatorId, StringList parametersList, string session, DateTime initDateTime)
         {
             var result = new PaymentResult
             {
@@ -260,7 +268,7 @@ namespace Gateways
 
             trxInf.Element("DueAmt").Value = parametersList.Get("DueAmt");
             trxInf.Element("PaidAmt").Value = parametersList.Get("DueAmt");
-            trxInf.Element("ProcessDate").Value = parametersList.Get("InitializeDateTime");
+            trxInf.Element("ProcessDate").Value = initDateTime.ToString(EFAWATEER_DATE_FORMAT);
             trxInf.Element("PaymentType").Value = parametersList.Get("PaymentType");
             trxInf.Element("ServiceTypeDetails").Element("ServiceType").Value = parametersList.Get("ServiceType");
 
@@ -309,6 +317,8 @@ namespace Gateways
 
         public override string ProcessOnlineCheck(NewPaymentData paymentData, object operatorData)
         {
+            Logger.Info("check online");
+            
             int responseResult = 0;
             string param = string.Empty;
             var paymentResult = new PaymentResult();
@@ -317,7 +327,7 @@ namespace Gateways
                 var operatorRow = operatorData as DataRow;
                 if (operatorRow == null)
                     throw new Exception("unable to extract paymentData");
-
+                LogTableRows(null, operatorRow);
                 var operatorFormatString = operatorRow["OsmpFormatString"] is DBNull
                     ? ""
                     : operatorRow["OsmpFormatString"] as string;
@@ -351,6 +361,8 @@ namespace Gateways
             string responseString = "DATE=" + DateTime.Now.ToString("ddMMyyyy HHmmss") + "\r\n" + "SESSION=" +
                                     paymentData.Session + "\r\n" + "ERROR=" + responseResult + "\r\n" + "RESULT=" +
                                     ((responseResult == 0) ? "0" : "1") + "\r\n" + param + "\r\n";
+
+            Logger.Info("checkResult: {0}", responseString);
 
             return responseString;
         }
@@ -512,7 +524,7 @@ namespace Gateways
             };
         }
 
-        public PaymentResult PrepaidPaymentRequest(int cyberplatOperatorId, StringList parametersList, string session)
+        public PaymentResult PrepaidPaymentRequest(int cyberplatOperatorId, StringList parametersList, string session, DateTime initDateTime)
         {
 
             var result = new PaymentResult
@@ -549,7 +561,7 @@ namespace Gateways
             trxInf.Element("DueAmt").Value = parametersList.Get("DueAmt");
             trxInf.Element("PaidAmt").Value = parametersList.Get("DueAmt");
             trxInf.Element("ValidationCode").Value = parametersList.Get("ValidationCode");
-            trxInf.Element("ProcessDate").Value = parametersList.Get("InitializeDateTime");
+            trxInf.Element("ProcessDate").Value = initDateTime.ToString(EFAWATEER_DATE_FORMAT);
             trxInf.Element("BankTrxID").Value = session;
 
             Logger.Info("PrepaidPaymentRequest request:" + request);
@@ -705,7 +717,7 @@ namespace Gateways
             };
         }
 
-        public PaymentResult BillPaymentRequest(int cyberplatOperatorId, StringList parametersList, string session, string initializeDateTime)
+        public PaymentResult BillPaymentRequest(int cyberplatOperatorId, StringList parametersList, string session, DateTime initializeDateTime)
         {
             var result = new PaymentResult
             {
@@ -750,7 +762,7 @@ namespace Gateways
             trxInf.Element("DueAmt").Value = parametersList.Get("DueAmt");
             trxInf.Element("PaidAmt").Value = parametersList.Get("DueAmt");
 
-            trxInf.Element("ProcessDate").Value = initializeDateTime;
+            trxInf.Element("ProcessDate").Value = initializeDateTime.ToString(EFAWATEER_DATE_FORMAT);
             trxInf.Element("BankTrxID").Value = session;
 
             Logger.Info("BillPaymentRequest request:" + request);

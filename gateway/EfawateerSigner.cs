@@ -57,14 +57,14 @@ namespace EfawateerGateway
         public string SignData(string body)
         {
             var rsaProv = (RSACryptoServiceProvider)_signCertificate.PrivateKey;
-            byte[] data = rsaProv.SignData(Encoding.Unicode.GetBytes(body), CryptoConfig.MapNameToOID("sha1"));
+            byte[] data = rsaProv.SignData(Encoding.Unicode.GetBytes(body), CryptoConfig.MapNameToOID("sha256"));
             return Convert.ToBase64String(data);
         }
 
         public bool VerifyData(string toString, byte[] signature)
         {
             var rsaProv = (RSACryptoServiceProvider)_verifyCertificate.PublicKey.Key;
-            return rsaProv.VerifyData(Encoding.Unicode.GetBytes(toString), CryptoConfig.MapNameToOID("sha1"), signature);
+            return rsaProv.VerifyData(Encoding.Unicode.GetBytes(toString), CryptoConfig.MapNameToOID("sha256"), signature);
         }
     }
 }
