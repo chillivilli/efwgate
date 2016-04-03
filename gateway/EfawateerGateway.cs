@@ -228,6 +228,8 @@ namespace Gateways
                     {
                         if ("PmtComplt".Equals(result.State))
                             paymentState = 7;
+                        else
+                            paymentState = 5;
                     }
                     
                     PreprocessPaymentStatus(ap, initial_session, EfawateerCodeToCyberCode(result.Error), paymentState, exData);
@@ -494,7 +496,9 @@ namespace Gateways
                 trxInf = response.Element("MsgBody").Element("Transactions").Element("TrxInf");
                 
                 result.Error = Convert.ToInt32(trxInf.Element("Result").Element("ErrorCode").Value);
-                result.State = trxInf.Element("PmtStatus").Value;
+                var el = trxInf.Element("PmtStatus");
+                if(el != null)
+                    result.State = el.Value;
                 
             }
             else
@@ -504,10 +508,7 @@ namespace Gateways
 
             return result;
         }
-
-
-
-
+        
         public PaymentResult PrepaidValidationRequest(int cyberplatOperatorId, StringList parametersList)
         {
             var billerCode = ExpandBillerCodeFromCyberplatOpertaroId(cyberplatOperatorId);
@@ -871,6 +872,8 @@ namespace Gateways
                 {
                     ReceiveTimeout = _config.Timeout
                 }, new EndpointAddress(_config.BillerList));
+
+                client.Endpoint.Behaviors.Add(new EndpointLoggerBehaviour());
                 var list = client.GetBillersList(Guid.NewGuid().ToString(), token);
                 return list.ToString();
             }
