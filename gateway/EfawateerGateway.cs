@@ -51,12 +51,17 @@ namespace Gateways
         private const string Prepadpmtrq = "PREPADPMTRQ";
         private const string Pmtinqrq = "PMTINQRQ";
         
-
+        /// <summary>
+        /// default ctor
+        /// </summary>
         public EfawateerGateway()
         {
             _config = new GatewayConfig();
         }
 
+        /// <summary>
+        /// copy ctor
+        /// </summary>
         public EfawateerGateway(EfawateerGateway gateway)
         {
             if(gateway._config != null)
@@ -66,6 +71,10 @@ namespace Gateways
             Copy(gateway);
         }
 
+        /// <summary>
+        /// gateway initialization
+        /// </summary>
+        /// <param name="data">xml config</param>
         public void Initialize(string data)
         {
             log("Initialize, GateProfileID=" + GateProfileID);
@@ -82,6 +91,70 @@ namespace Gateways
             }
         }
 
+        /// <summary>
+        /// Check if can pay
+        /// </summary>
+        /// <param name="paymentData">params for pay</param>
+        /// <param name="operatorData">DataRow from db</param>
+        /// <returns></returns>
+        public override string ProcessOnlineCheck(NewPaymentData paymentData, object operatorData)
+        {
+            Logger.Info("check online");
+
+            int responseResult = 0;
+            string param = string.Empty;
+            var paymentResult = new PaymentResult();
+            try
+            {
+                var operatorRow = operatorData as DataRow;
+                if (operatorRow == null)
+                    throw new Exception("unable to extract paymentData");
+                LogTableRows(null, operatorRow);
+                var operatorFormatString = operatorRow["OsmpFormatString"] is DBNull
+                    ? ""
+                    : operatorRow["OsmpFormatString"] as string;
+                var formatedPaymentParams = paymentData.Params.FormatParameters(operatorFormatString);
+                var parametersList = new StringList(formatedPaymentParams, ";");
+
+                var paymentType = (PaymentType)Enum.Parse(typeof(PaymentType), parametersList.Get("PaymentType"));
+                switch (paymentType)
+                {
+                    case PaymentType.Prepaid:
+                        paymentResult = PrepaidValidationRequest(paymentData.CyberplatOperatorID, parametersList);
+                        if (paymentResult.Error == 0)
+                            param = string.Format("DUEAMOUNT={0}\r\nLOWERAMOUNT=0\r\nUPPERAMOUNT=0", paymentResult.Params.Get("DueAmt"));
+                        break;
+                    case PaymentType.Postpaid:
+                        paymentResult = BillInquiryRequest(paymentData.CyberplatOperatorID, parametersList);
+                        if (paymentResult.Error == 0)
+                            param = string.Format("DUEAMOUNT={0}\r\nLOWERAMOUNT={1}\r\nUPPERAMOUNT={2}", paymentResult.Params.Get("DueAmt"), paymentResult.Params.Get("LOWERAMOUNT"), paymentResult.Params.Get("UPPERAMOUNT"));
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Critical(ex, "ProcessOnlineCheck unexpected exception");
+                responseResult = 30;
+            }
+
+            if (paymentResult.Error != 0)
+                responseResult = 30;
+
+            string responseString = "DATE=" + DateTime.Now.ToString("ddMMyyyy HHmmss") + "\r\n" + "SESSION=" +
+                                    paymentData.Session + "\r\n" + "ERROR=" + responseResult + "\r\n" + "RESULT=" +
+                                    ((responseResult == 0) ? "0" : "1") + "\r\n" + param + "\r\n";
+
+            Logger.Info("checkResult: {0}", responseString);
+
+            return responseString;
+        }
+
+        /// <summary>
+        /// ProcessPament
+        /// </summary>
+        /// <param name="paymentData">DataRow from payments table</param>
+        /// <param name="operatorData">DataRow from operator table</param>
+        /// <param name="exData">???</param>
         public void ProcessPayment(object paymentData, object operatorData, object exData)
         {
             var initial_session = string.Empty;
@@ -206,7 +279,44 @@ namespace Gateways
             }
         }
 
-        /// <summary>использвалось для отладки</summary>
+
+        /// <summary>
+        /// Check settings IGateway impl
+        /// </summary>
+        /// <returns></returns>
+        public string CheckSettings()
+        {
+            var message = string.Empty;
+            try
+            {
+                Authenticate();
+                if (AuthenticateTokenProvider.Current.IsExpired)
+                    message = "error updating token, check settings";
+                else
+                    message = "OK";
+            }
+            catch (Exception ex)
+            {
+                message += " (Exception): " + ex.Message;
+                Logger.Critical(ex, "check settings error");
+            }
+
+            return message;
+        }
+
+        /// <summary>
+        /// Clone gateway IGateway impl
+        /// </summary>
+        /// <returns>this clone</returns>
+        public IGateway Clone()
+        {
+            return new EfawateerGateway(this);
+        }
+
+
+        /// <summary>
+        /// Trace table rows if they exist
+        /// </summary>
         private void LogTableRows(DataRow paymentRow, DataRow operatorRow)
         {
             if (paymentRow != null)
@@ -314,85 +424,9 @@ namespace Gateways
 
             return result;
         }
+        
 
-        public override string ProcessOnlineCheck(NewPaymentData paymentData, object operatorData)
-        {
-            Logger.Info("check online");
-            
-            int responseResult = 0;
-            string param = string.Empty;
-            var paymentResult = new PaymentResult();
-            try
-            {
-                var operatorRow = operatorData as DataRow;
-                if (operatorRow == null)
-                    throw new Exception("unable to extract paymentData");
-                LogTableRows(null, operatorRow);
-                var operatorFormatString = operatorRow["OsmpFormatString"] is DBNull
-                    ? ""
-                    : operatorRow["OsmpFormatString"] as string;
-                var formatedPaymentParams = paymentData.Params.FormatParameters(operatorFormatString);
-                var parametersList = new StringList(formatedPaymentParams, ";");
-
-                var paymentType = (PaymentType) Enum.Parse(typeof (PaymentType), parametersList.Get("PaymentType"));                
-                switch (paymentType)
-                {
-                    case PaymentType.Prepaid:
-                        paymentResult = PrepaidValidationRequest(paymentData.CyberplatOperatorID, parametersList);
-                        if(paymentResult.Error == 0)
-                            param = string.Format("DUEAMOUNT={0}\r\nLOWERAMOUNT=0\r\nUPPERAMOUNT=0", paymentResult.Params.Get("DueAmt"));
-                        break;
-                    case PaymentType.Postpaid:
-                        paymentResult = BillInquiryRequest(paymentData.CyberplatOperatorID, parametersList);
-                        if (paymentResult.Error == 0)
-                            param = string.Format("DUEAMOUNT={0}\r\nLOWERAMOUNT={1}\r\nUPPERAMOUNT={2}", paymentResult.Params.Get("DueAmt"), paymentResult.Params.Get("LOWERAMOUNT"), paymentResult.Params.Get("UPPERAMOUNT"));
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Critical(ex, "ProcessOnlineCheck unexpected exception");
-                responseResult = 30;
-            }
-
-            if(paymentResult.Error != 0)
-                responseResult = 30;
-
-            string responseString = "DATE=" + DateTime.Now.ToString("ddMMyyyy HHmmss") + "\r\n" + "SESSION=" +
-                                    paymentData.Session + "\r\n" + "ERROR=" + responseResult + "\r\n" + "RESULT=" +
-                                    ((responseResult == 0) ? "0" : "1") + "\r\n" + param + "\r\n";
-
-            Logger.Info("checkResult: {0}", responseString);
-
-            return responseString;
-        }
-
-        public string CheckSettings()
-        {
-            /*
-             * проверяется только успешность получения токена, остальные службы не проверяются.
-             * они должны работать в комплексе, и если нет доступа к этой - то работоспособность 
-             * остальных не имеет особого значения
-             */
-            var message = string.Empty;
-            try
-            {
-                Authenticate();
-
-                message = "OK";
-            }
-            catch (Exception ex)
-            {
-                message += " (Exception): " + ex.Message;
-            }
-
-            return message;
-        }
-
-        public IGateway Clone()
-        {
-            return new EfawateerGateway(this);
-        }
+        
 
         private string GenerateGuid()
         {
@@ -469,32 +503,30 @@ namespace Gateways
             var billInfo = request.Element("MsgBody").Element("BillingInfo");
             var accInfo = billInfo.Element("AcctInfo");
             accInfo.Element("BillerCode").Value = billerCode.ToString();
-
-            if (!parametersList.ContainsKey("BillingNo") || parametersList["BillingNo"].Contains("#"))
-                accInfo.Element("BillingNo").Remove();
-            else
+            
+            if(parametersList.HasValue("BillingNo"))
                 accInfo.Element("BillingNo").Value = parametersList["BillingNo"];
+            else
+                accInfo.Element("BillingNo").Remove();
 
             var serviceTypeDetails = billInfo.Element("ServiceTypeDetails");
+            serviceTypeDetails.Element("ServiceType").Value = parametersList.Get("ServiceType");
 
-            serviceTypeDetails.Element("ServiceType").Value = parametersList["ServiceType"];
-
-            if (!parametersList.ContainsKey("PrepaidCat"))
-                serviceTypeDetails.Element("PrepaidCat").Remove();
+            if(parametersList.HasValue("PrepaidCat"))
+                serviceTypeDetails.Element("PrepaidCat").Value = parametersList.Get("PrepaidCat");
             else
-                serviceTypeDetails.Element("PrepaidCat").Value = parametersList["PrepaidCat"];
-
-            if (!parametersList.ContainsKey("DueAmt"))
+                serviceTypeDetails.Element("PrepaidCat").Remove();
+            
+            if (!parametersList.HasValue("DueAmt"))
                 billInfo.Element("DueAmt").Remove();
             else
-                billInfo.Element("DueAmt").Value = parametersList["DueAmt"];
-
-
-            Logger.Info("Validation request:" + request);
-
+                billInfo.Element("DueAmt").Value = parametersList.Get("DueAmt");
+            
             request.Element("MsgFooter").Element("Security").Element("Signature").Value =
                 signer.SignData(request.Element("MsgBody").ToString());
 
+            Logger.Info("Validation request:" + request);
+            
             var service = new PrepaidValidationClient(new WSHttpBinding(SecurityMode.None, true)
             {
                 ReceiveTimeout = _config.Timeout
@@ -549,7 +581,7 @@ namespace Gateways
             var trxInf = request.Element("MsgBody").Element("TrxInf");
             var accInfo = trxInf.Element("AcctInfo");
 
-            if (!parametersList.ContainsKey("BillingNo") || parametersList["BillingNo"].Contains("#"))
+            if (!parametersList.HasValue("BillingNo"))
                 accInfo.Element("BillingNo").Remove();
             else
                 accInfo.Element("BillingNo").Value = parametersList["BillingNo"];
@@ -564,10 +596,12 @@ namespace Gateways
             trxInf.Element("ProcessDate").Value = initDateTime.ToString(EFAWATEER_DATE_FORMAT);
             trxInf.Element("BankTrxID").Value = session;
 
-            Logger.Info("PrepaidPaymentRequest request:" + request);
-
             request.Element("MsgFooter").Element("Security").Element("Signature").Value =
                 signer.SignData(request.Element("MsgBody").ToString());
+
+            Logger.Info("PrepaidPaymentRequest request:" + request);
+
+            
 
             var service = new PrepaidPaymentClient(new WSHttpBinding(SecurityMode.None, true)
             {
@@ -613,7 +647,7 @@ namespace Gateways
             var accInfo = billInfo.Element("AcctInfo");
             accInfo.Element("BillerCode").Value = billerCode.ToString(CultureInfo.InvariantCulture);
 
-            if (!parametersList.ContainsKey("BillingNo") || parametersList["BillingNo"].Contains("#"))
+            if (!parametersList.HasValue("BillingNo"))
                 accInfo.Element("BillingNo").Remove();
             else
                 accInfo.Element("BillingNo").Value = parametersList["BillingNo"];
@@ -624,11 +658,11 @@ namespace Gateways
             dateRange.Element("StartDt").Value = now.AddDays(-_config.StartDt).ToString("s");
             dateRange.Element("EndDt").Value = time;
 
-            Logger.Info("BillInquiryRequest request:" + request);
-
             request.Element("MsgFooter").Element("Security").Element("Signature").Value =
                 signer.SignData(request.Element("MsgBody").ToString());
 
+            Logger.Info("BillInquiryRequest request:" + request);
+            
             var service = new BillInquiryClient(new WSHttpBinding(SecurityMode.None, true)
             {
                 ReceiveTimeout = _config.Timeout
@@ -743,15 +777,15 @@ namespace Gateways
 
             var accInfo = trxInf.Element("AcctInfo");
 
-            if (!parametersList.ContainsKey("BillingNo") || parametersList["BillingNo"].Contains("#"))
+            if (!parametersList.HasValue("BillingNo"))
             {
                 accInfo.Element("BillingNo").Remove();
                 accInfo.Element("BillNo").Remove();
             }
             else
             {
-                accInfo.Element("BillingNo").Value = parametersList["BillingNo"];
-                accInfo.Element("BillNo").Value = parametersList["BillingNo"];
+                accInfo.Element("BillingNo").Value = parametersList.Get("BillingNo");
+                accInfo.Element("BillNo").Value = parametersList.Get("BillingNo");
             }
 
             accInfo.Element("BillerCode").Value =
@@ -765,10 +799,12 @@ namespace Gateways
             trxInf.Element("ProcessDate").Value = initializeDateTime.ToString(EFAWATEER_DATE_FORMAT);
             trxInf.Element("BankTrxID").Value = session;
 
-            Logger.Info("BillPaymentRequest request:" + request);
-
             request.Element("MsgFooter").Element("Security").Element("Signature").Value =
                 signer.SignData(request.Element("MsgBody").ToString());
+
+            Logger.Info("BillPaymentRequest request:" + request);
+
+            
 
             var service = new PaymentClient(new WSHttpBinding(SecurityMode.None, true)
             {
@@ -814,6 +850,7 @@ namespace Gateways
             }
             catch (Exception exception)
             {
+                Logger.Error(exception, "GetData error");
                 return string.Format("Ошибка получения данных: " + exception.Message);
             }
         }

@@ -56,7 +56,10 @@ namespace EfawateerGateway
 
         public string SignData(string body)
         {
-            var rsaProv = (RSACryptoServiceProvider)_signCertificate.PrivateKey;
+            
+            RSACryptoServiceProvider rsaProv = new RSACryptoServiceProvider();
+            rsaProv.FromXmlString(_signCertificate.PrivateKey.ToXmlString(true));
+            
             byte[] data = rsaProv.SignData(Encoding.Unicode.GetBytes(body), CryptoConfig.MapNameToOID("sha256"));
             return Convert.ToBase64String(data);
         }

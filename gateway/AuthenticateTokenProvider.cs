@@ -57,7 +57,7 @@ namespace Gateways
 
         public override DateTime ExpiryDate
         {
-            get { return DateTime.MaxValue; }
+            get { return DateTime.MinValue; }
         }
 
         public override string TokenKey

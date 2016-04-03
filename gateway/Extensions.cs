@@ -21,6 +21,13 @@ namespace EfawateerGateway
             throw new KeyNotFoundException(msg);
         }
 
+        public static bool HasValue(this StringList strings, string name)
+        {
+            if (strings.ContainsKey(name))
+                return !strings[name].StartsWith("[#");
+            return false;
+        }
+
 
         //public static string FormatParameters(this string parameters, string operatorFormatString)
         //{
@@ -92,17 +99,6 @@ namespace EfawateerGateway
             }
             return result;
         }
-
-        public static string GetParamsString(this StringList strings)
-        {
-            StringBuilder sb = new StringBuilder();
-            foreach(var str in strings)
-            {
-                sb.AppendFormat("{0}={1}\\n", str.Key, str.Value);
-            }
-
-            return sb.ToString();
-        }
-
+        
     }
 }
