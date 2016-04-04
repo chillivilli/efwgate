@@ -218,7 +218,7 @@ namespace Gateways
                     return;
                 }
                 
-                if (status == 6)
+                if (status == 6 || status == 5)
                 {
                     Logger.Info("Processing payment");
                     var result = PaymentInquiryRequest(cyberplatOperatorId, parametersList, session, processDate, amount);
