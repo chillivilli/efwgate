@@ -37,26 +37,7 @@ namespace EfawateerGateway.Proxy.Service
         }
 
         public object BeforeSendRequest(ref Message request, System.ServiceModel.IClientChannel channel)
-        {
-
-            //string requestString = request.ToString();
-
-            //int trxIndex = requestString.IndexOf("<BankTrxID>");
-            //int trxEndIndex = requestString.IndexOf("</BankTrxID>");
-
-            //string guid = null;
-
-            //if(trxIndex > 0 && trxEndIndex > 0)
-            //{
-            //    guid = requestString.Substring(trxIndex, trxEndIndex - trxIndex).Replace("<BankTrxID>", string.Empty);
-            //}
-
-            //if (!string.IsNullOrEmpty(guid))
-            //{
-            //    var header = MessageHeader.CreateHeader("guid", "http://tempuri.org", guid);
-            //    request.Headers.Add(header);
-            //}
-            
+        {   
             var log = new StringBuilder();
             log.AppendFormat("[REQUEST, Action = '{0}']", request.Headers.Action).AppendLine();
             log.AppendFormat("Endpoint: '{0}'", channel.RemoteAddress.Uri).AppendLine();

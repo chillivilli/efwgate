@@ -59,7 +59,10 @@
     <Compile Include="GatewayConfig.cs" />
     <Compile Include="IEfawateerSigner.cs" />
     <Compile Include="Logger.cs" />
+    <Compile Include="PaymentResult.cs" />
+    <Compile Include="PaymentType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Proxy\EfawateerService.cs" />
     <Compile Include="Proxy\Service\EndpointLoggerBehavoir.cs" />
     <Compile Include="Proxy\Service\IBillersList.cs" />
     <Compile Include="Proxy\Service\IBillInquiry.cs" />

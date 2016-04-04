@@ -24,6 +24,7 @@
       <PaymentMethod>CASH</PaymentMethod>
       <ServiceTypeDetails>
         <ServiceType>Prepaid</ServiceType>
+        <PrepaidCat>?</PrepaidCat>
       </ServiceTypeDetails>
     </TrxInf>
   </MsgBody>

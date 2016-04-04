@@ -23,23 +23,7 @@ namespace Gateways
     {
 
         private const string EFAWATEER_DATE_FORMAT = "yyyy-MM-ddTHH:mm:ss";
-
-
-        private enum PaymentType
-        {
-            Prepaid,
-            Postpaid
-        }
-
-        public class PaymentResult
-        {
-            public string JoebppsTrx { get; set; }
-            public int Error { get; set; }
-            public DateTime TimeStamp { get; set; }
-            public StringList Params { get; set; }
-
-            public string State { get; set; }
-        }
+      
 
         // фатальные ошибки
         private readonly List<int> _fatalErrors = new List<int>();
@@ -187,9 +171,9 @@ namespace Gateways
                 var error = (int) paymentRow["ErrorCode"];
                 var paymentParams = paymentRow["Params"] as string;
                 var processDate = DateTime.Parse(paymentRow["InitializeDateTime"].ToString());
-                float? amountNum = null;
+                double? amountNum = null;
                 if(paymentRow["Amount"] != null)
-                    amountNum = (float)paymentRow["Amount"];
+                    amountNum = (double)paymentRow["Amount"];
                 string amount = null;
                 if (amountNum.HasValue)
                     amount = amountNum.Value.ToString(CultureInfo.InvariantCulture);
@@ -348,8 +332,10 @@ namespace Gateways
                 Logger.Trace("paymentRow");
                 foreach (var column in paymentRow.Table.Columns.OfType<DataColumn>())
                 {
-                    Logger.Trace("column {0} value '{1}'", column.ColumnName,
-                        (paymentRow[column.ColumnName] is DBNull) ? "null" : paymentRow[column.ColumnName]);
+                    var rowValue = paymentRow[column.ColumnName];
+
+                    Logger.Trace("column {0} type: {2} value '{1}'", column.ColumnName,
+                        (rowValue is DBNull) ? "null" : rowValue, rowValue.GetType());
                 }
             }
             if (operatorRow != null)
@@ -359,8 +345,11 @@ namespace Gateways
                 {
                     try
                     {
-                        Logger.Trace(string.Format("column {0} value '{1}'", column.ColumnName,
-                            (operatorRow[column.ColumnName] is DBNull) ? "null" : operatorRow[column.ColumnName]));
+                        var rowValue = operatorRow[column.ColumnName];
+
+                        Logger.Trace("column {0} type: {2} value '{1}'", column.ColumnName,
+                            (rowValue is DBNull) ? "null" : rowValue, rowValue.GetType());
+                        
                     }
                     catch (Exception)
                     {
@@ -438,7 +427,7 @@ namespace Gateways
 
             var now = DateTime.Now;
             var time = now.ToString("s");
-            var guid = session;
+            var guid = Guid.NewGuid().ToString();
 
             request.Element("MsgHeader").Element("TmStp").Value = time;
             request.Element("MsgHeader").Element("TrsInf").Element("SdrCode").Value = _config.CustomerCode;
@@ -457,9 +446,13 @@ namespace Gateways
             trxInf.Element("PaidAmt").Value = amount;
             trxInf.Element("ProcessDate").Value = initDateTime.ToString(EFAWATEER_DATE_FORMAT);
             trxInf.Element("PaymentType").Value = parametersList.Get("PaymentType");
-            trxInf.Element("ServiceTypeDetails").Element("ServiceType").Value = parametersList.Get("ServiceType");
+            var serviceTypeDetails = trxInf.Element("ServiceTypeDetails");
+            serviceTypeDetails.Element("ServiceType").Value = parametersList.Get("ServiceType");
 
-            trxInf.Element("ServiceTypeDetails").Element("PrepaidCat").Remove();
+            if (parametersList.HasValue("PrepaidCat"))
+                serviceTypeDetails.Element("PrepaidCat").Value = parametersList.Get("PrepaidCat");
+            else
+                serviceTypeDetails.Element("PrepaidCat").Remove();
 
             var accInfo = trxInf.Element("AcctInfo");
 
@@ -613,7 +606,16 @@ namespace Gateways
 
             accInfo.Element("BillerCode").Value = billerCode.ToString();
 
+
+            var serviceTypeDetails = trxInf.Element("ServiceTypeDetails");
+            serviceTypeDetails.Element("ServiceType").Value = parametersList.Get("ServiceType");
             trxInf.Element("ServiceTypeDetails").Element("ServiceType").Value = parametersList.Get("ServiceType");
+
+
+            if (parametersList.HasValue("PrepaidCat"))
+                serviceTypeDetails.Element("PrepaidCat").Value = parametersList.Get("PrepaidCat");
+            else
+                serviceTypeDetails.Element("PrepaidCat").Remove();
 
             trxInf.Element("DueAmt").Value = parametersList.Get("DueAmt");
             trxInf.Element("PaidAmt").Value = amount;
@@ -637,7 +639,9 @@ namespace Gateways
             Logger.Info("PrepaidPaymentRequest response:" + response);
 
             trxInf = response.Element("MsgBody").Element("TrxInf");
-            result.JoebppsTrx = trxInf.Element("JOEBPPSTrx").Value;
+            var joebppsTrx = trxInf.Element("JOEBPPSTrx");
+            if(joebppsTrx != null)
+                result.JoebppsTrx = joebppsTrx.Value;
             string stmtdate = trxInf.Element("STMTDate").Value;
             if (parametersList.ContainsKey("STMTDate"))
                 parametersList["STMTDate"] = stmtdate;
@@ -881,6 +885,7 @@ namespace Gateways
                 return string.Format("Ошибка получения данных: " + exception.Message);
             }
         }
+        
     }
     
 }
