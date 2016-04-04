@@ -12,6 +12,7 @@ using System.Xml.Linq;
 using EfawateerGateway.Proxy.Service;
 using Gateways.Utils;
 using EfawateerGateway;
+using System.Text;
 
 // ReSharper disable CheckNamespace
 
@@ -186,9 +187,9 @@ namespace Gateways
                 var error = (int) paymentRow["ErrorCode"];
                 var paymentParams = paymentRow["Params"] as string;
                 var processDate = DateTime.Parse(paymentRow["InitializeDateTime"].ToString());
-                decimal? amountNum = null;
+                float? amountNum = null;
                 if(paymentRow["Amount"] != null)
-                    amountNum = (decimal)paymentRow["Amount"];
+                    amountNum = (float)paymentRow["Amount"];
                 string amount = null;
                 if (amountNum.HasValue)
                     amount = amountNum.Value.ToString(CultureInfo.InvariantCulture);
@@ -368,13 +369,7 @@ namespace Gateways
                 }
             }
         }
-
-    
-        private string GenerateGuid()
-        {
-            return Guid.NewGuid().ToString();
-        }
-
+        
         public string Authenticate()
         {
 
