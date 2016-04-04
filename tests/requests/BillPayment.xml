@@ -1,0 +1,36 @@
+﻿<MFEP>
+  <MsgHeader>
+    <TmStp>?</TmStp>
+    <TrsInf>
+      <SdrCode>158</SdrCode>
+      <RcvCode>1</RcvCode>
+      <ReqTyp>BILPMTRQ</ReqTyp>
+    </TrsInf>
+  </MsgHeader>
+  <MsgBody>
+    <Transactions>
+      <TrxInf>
+        <AcctInfo>
+          <BillingNo>22134423S1</BillingNo>
+          <BillNo>22134423S</BillNo>
+          <BillerCode>39</BillerCode>
+        </AcctInfo>
+        <BankTrxID>?</BankTrxID>
+        <PmtStatus>PmtNew</PmtStatus>        
+        <DueAmt>28.5</DueAmt>
+        <PaidAmt>28.5</PaidAmt>
+        <ProcessDate>?</ProcessDate>
+        <AccessChannel>ATM</AccessChannel>
+        <PaymentMethod>CASH</PaymentMethod>
+        <ServiceTypeDetails>
+          <ServiceType>Electricity</ServiceType>
+        </ServiceTypeDetails>
+      </TrxInf>
+    </Transactions>
+  </MsgBody>
+  <MsgFooter>
+    <Security>
+      <Signature>1234567890</Signature>
+    </Security>
+  </MsgFooter>
+</MFEP>

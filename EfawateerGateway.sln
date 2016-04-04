@@ -1,9 +1,25 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EfawateerTests", "..\tests\EfawateerTests.csproj", "{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}"
-EndProject
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EfawateerGateway", "gateway\EfawateerGateway.csproj", "{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Cert", "Cert", "{58737419-F306-4F41-8EEA-EA51DC110877}"
+	ProjectSection(SolutionItems) = preProject
+		cert\ARKAIM-TEST with private.pfx = cert\ARKAIM-TEST with private.pfx
+		cert\ARKAIM-TEST.p7b = cert\ARKAIM-TEST.p7b
+		cert\efawateer.crt = cert\efawateer.crt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{B3F60E25-6EC1-4F09-A8FD-64AACBEF8B36}"
+	ProjectSection(SolutionItems) = preProject
+		libs\GatewayInterface.dll = libs\GatewayInterface.dll
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{902E3B9B-5061-4433-8D3B-4918D45241C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EfawateerTests", "tests\EfawateerTests.csproj", "{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,20 +28,23 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.DebugTest|Any CPU.ActiveCfg = DebugTest|Any CPU
-		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.DebugTest|Any CPU.Build.0 = DebugTest|Any CPU
-		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.DebugTest|Any CPU.ActiveCfg = DebugTest|Any CPU
 		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.DebugTest|Any CPU.Build.0 = DebugTest|Any CPU
 		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{526984D3-9BD6-4381-A1AC-8D75ABB8C3CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.DebugTest|Any CPU.ActiveCfg = DebugTest|Any CPU
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.DebugTest|Any CPU.Build.0 = DebugTest|Any CPU
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DDD9E00F-F7B4-4908-8E95-EFAB01DE8AD1} = {902E3B9B-5061-4433-8D3B-4918D45241C3}
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,22 @@
+﻿<MFEP>
+  <MsgHeader>
+    <TmStp>2016-01-21T14:38:24</TmStp>
+    <TrsInf>
+      <SdrCode>158</SdrCode>
+      <RcvCode>1</RcvCode>
+      <ReqTyp>BILINQRQ</ReqTyp>
+    </TrsInf>
+  </MsgHeader>
+  <MsgBody>
+    <AcctInfo>
+      <BillingNo>22134423S</BillingNo>
+      <BillerCode>26</BillerCode>
+    </AcctInfo>
+    <ServiceType>FixedLine</ServiceType>
+  </MsgBody>
+  <MsgFooter>
+    <Security>
+      <Signature>1234567890</Signature>
+    </Security>
+  </MsgFooter>
+</MFEP>

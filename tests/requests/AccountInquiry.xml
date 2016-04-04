@@ -1,0 +1,24 @@
+﻿<MFEP>
+  <MsgHeader>
+    <TmStp>2016-01-28T14:38:24</TmStp>
+    <TrsInf>
+      <SdrCode>158</SdrCode>
+      <RcvCode>1</RcvCode>
+      <ReqTyp>ACCTINQRQ</ReqTyp>
+    </TrsInf>
+  </MsgHeader>
+  <MsgBody>
+    <Acct>
+      <CustId>
+        <IdType>PAS</IdType>
+        <Id>071231204</Id>
+        <Nation>RU</Nation>
+      </CustId>
+    </Acct>
+  </MsgBody>
+  <MsgFooter>
+    <Security>
+      <Signature>1234567890</Signature>
+    </Security>
+  </MsgFooter>
+</MFEP>
