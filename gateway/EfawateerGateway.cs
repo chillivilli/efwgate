@@ -186,9 +186,13 @@ namespace Gateways
                 var error = (int) paymentRow["ErrorCode"];
                 var paymentParams = paymentRow["Params"] as string;
                 var processDate = DateTime.Parse(paymentRow["InitializeDateTime"].ToString());
-                string amount = null;
+                decimal? amountNum = null;
                 if(paymentRow["Amount"] != null)
-                    amount = paymentRow["Amount"].ToString();
+                    amountNum = (decimal)paymentRow["Amount"];
+                string amount = null;
+                if (amountNum.HasValue)
+                    amount = amountNum.Value.ToString(CultureInfo.InvariantCulture);
+
                 
                 string operatorFormatString = operatorRow["OsmpFormatString"] is DBNull ? "" : operatorRow["OsmpFormatString"] as string;
 
