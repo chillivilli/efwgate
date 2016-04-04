@@ -111,7 +111,7 @@ namespace Gateways
                 var operatorRow = operatorData as DataRow;
                 if (operatorRow == null)
                     throw new Exception("unable to extract paymentData");
-                LogTableRows(null, operatorRow);
+                TraceTableRows(null, operatorRow);
                 var operatorFormatString = operatorRow["OsmpFormatString"] is DBNull
                     ? ""
                     : operatorRow["OsmpFormatString"] as string;
@@ -172,7 +172,7 @@ namespace Gateways
                 if (operatorRow == null)
                     throw new Exception("unable to extract operatorRow");
 
-                LogTableRows(paymentRow, operatorRow);
+                TraceTableRows(paymentRow, operatorRow);
 
                 initial_session = (paymentRow["InitialSessionNumber"] as string);
 
@@ -340,7 +340,7 @@ namespace Gateways
         /// <summary>
         /// Trace table rows if they exist
         /// </summary>
-        private void LogTableRows(DataRow paymentRow, DataRow operatorRow)
+        private void TraceTableRows(DataRow paymentRow, DataRow operatorRow)
         {
             if (paymentRow != null)
             {
@@ -370,7 +370,6 @@ namespace Gateways
         }
 
     
-
         private string GenerateGuid()
         {
             return Guid.NewGuid().ToString();
@@ -481,11 +480,11 @@ namespace Gateways
             }
 
             accInfo.Element("BillerCode").Value = billerCode.ToString(CultureInfo.InvariantCulture);
-
-            Logger.Info("PaymentInquiryRequest request:" + request);
-
+            
             request.Element("MsgFooter").Element("Security").Element("Signature").Value =
                 signer.SignData(request.Element("MsgBody").ToString());
+            
+            Logger.Info("PaymentInquiryRequest request:" + request);
 
             var service = new PaymentInquiryClient(new WSHttpBinding(SecurityMode.None, true)
             {
