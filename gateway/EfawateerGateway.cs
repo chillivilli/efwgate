@@ -443,7 +443,7 @@ namespace Gateways
 
             var now = DateTime.Now;
             var time = now.ToString("s");
-            var guid = GenerateGuid();
+            var guid = session;
 
             request.Element("MsgHeader").Element("TmStp").Value = time;
             request.Element("MsgHeader").Element("TrsInf").Element("SdrCode").Value = _config.CustomerCode;
@@ -521,7 +521,7 @@ namespace Gateways
             var signer = new EfawateerSigner(_config.SignCertificateThumb, _config.VerifyCertificateThumb);
 
             var time = DateTime.Now.ToString("s");
-            var guid = GenerateGuid();
+            var guid = Guid.NewGuid().ToString();
             request.Element("MsgHeader").Element("TmStp").Value = time;
             request.Element("MsgHeader").Element("TrsInf").Element("SdrCode").Value = _config.CustomerCode;
             request.Element("MsgHeader").Element("GUID").Value = guid;
@@ -669,7 +669,7 @@ namespace Gateways
             var now = DateTime.Now;
 
             var time = now.ToString("s");
-            var guid = GenerateGuid();
+            var guid = Guid.NewGuid().ToString();
             request.Element("MsgHeader").Element("TmStp").Value = time;
             request.Element("MsgHeader").Element("TrsInf").Element("SdrCode").Value = _config.CustomerCode;
 
@@ -797,7 +797,7 @@ namespace Gateways
             var request = GetRequestContent(Bilpmtrq);
             var signer = new EfawateerSigner(_config.SignCertificateThumb, _config.VerifyCertificateThumb);
 
-            var guid = GenerateGuid();
+            var guid = session;
             var time = DateTime.Now.ToString("s");
 
             request.Element("MsgHeader").Element("TmStp").Value = time;
